@@ -16,22 +16,28 @@ app.get("api", (req, res) => {
   });
 });
 
-const users = [];
+const users = {};
 
 socketIO.on("connection", (socket) => {
   console.log(`${socket.id} user connected`);
 
   socket.on("message", (data) => {
-    socketIO.emit("response", data);
+    socketIO.to(data.chatId).emit("response", data);
   });
 
   socket.on("newUser", (data) => {
-    users.push(data);
-    socketIO.emit("responseNewUser", users);
+    const chatId = data.chatId;
+    console.log(chatId);
+    users?.[chatId] ? users[chatId].push(data) : (users[chatId] = [data]);
+    /* users.push(data); */
+    socket.join(chatId);
+    socketIO.to(chatId).emit("responseNewUser", users);
   });
+
   socket.on("typing", (data) => {
     socketIO.emit("responseTyping", data);
   });
+
   socket.on("disconnect", (socket) => {
     console.log(`${socket.id} user disconnet`);
   });
